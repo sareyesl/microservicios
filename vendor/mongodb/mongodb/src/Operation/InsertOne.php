@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,7 +35,7 @@ use function is_object;
  *
  * @api
  * @see \MongoDB\Collection::insertOne()
- * @see https://mongodb.com/docs/manual/reference/command/insert/
+ * @see http://docs.mongodb.org/manual/reference/command/insert/
  */
 class InsertOne implements Executable
 {
@@ -59,10 +59,6 @@ class InsertOne implements Executable
      *  * bypassDocumentValidation (boolean): If true, allows the write to
      *    circumvent document level validation.
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
-     *
      *  * session (MongoDB\Driver\Session): Client session.
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
@@ -73,7 +69,7 @@ class InsertOne implements Executable
      * @param array        $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(string $databaseName, string $collectionName, $document, array $options = [])
+    public function __construct($databaseName, $collectionName, $document, array $options = [])
     {
         if (! is_array($document) && ! is_object($document)) {
             throw InvalidArgumentException::invalidType('$document', $document, 'array or object');
@@ -99,8 +95,8 @@ class InsertOne implements Executable
             unset($options['writeConcern']);
         }
 
-        $this->databaseName = $databaseName;
-        $this->collectionName = $collectionName;
+        $this->databaseName = (string) $databaseName;
+        $this->collectionName = (string) $collectionName;
         $this->document = $document;
         $this->options = $options;
     }
@@ -109,6 +105,7 @@ class InsertOne implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
+     * @param Server $server
      * @return InsertOneResult
      * @throws UnsupportedException if write concern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
@@ -131,16 +128,15 @@ class InsertOne implements Executable
     /**
      * Create options for constructing the bulk write.
      *
-     * @see https://php.net/manual/en/mongodb-driver-bulkwrite.construct.php
+     * @see https://www.php.net/manual/en/mongodb-driver-bulkwrite.construct.php
+     * @return array
      */
-    private function createBulkWriteOptions(): array
+    private function createBulkWriteOptions()
     {
         $options = [];
 
-        foreach (['bypassDocumentValidation', 'comment'] as $option) {
-            if (isset($this->options[$option])) {
-                $options[$option] = $this->options[$option];
-            }
+        if (isset($this->options['bypassDocumentValidation'])) {
+            $options['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
         }
 
         return $options;
@@ -149,9 +145,10 @@ class InsertOne implements Executable
     /**
      * Create options for executing the bulk write.
      *
-     * @see https://php.net/manual/en/mongodb-driver-server.executebulkwrite.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executebulkwrite.php
+     * @return array
      */
-    private function createExecuteOptions(): array
+    private function createExecuteOptions()
     {
         $options = [];
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,7 @@ use function MongoDB\create_field_path_type_map;
  *
  * @api
  * @see \MongoDB\Collection::distinct()
- * @see https://mongodb.com/docs/manual/reference/command/distinct/
+ * @see http://docs.mongodb.org/manual/reference/command/distinct/
  */
 class Distinct implements Executable, Explainable
 {
@@ -64,10 +64,6 @@ class Distinct implements Executable, Explainable
      *
      *  * collation (document): Collation specification.
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
-     *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
      *
@@ -86,7 +82,7 @@ class Distinct implements Executable, Explainable
      * @param array        $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(string $databaseName, string $collectionName, string $fieldName, $filter = [], array $options = [])
+    public function __construct($databaseName, $collectionName, $fieldName, $filter = [], array $options = [])
     {
         if (! is_array($filter) && ! is_object($filter)) {
             throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
@@ -120,9 +116,9 @@ class Distinct implements Executable, Explainable
             unset($options['readConcern']);
         }
 
-        $this->databaseName = $databaseName;
-        $this->collectionName = $collectionName;
-        $this->fieldName = $fieldName;
+        $this->databaseName = (string) $databaseName;
+        $this->collectionName = (string) $collectionName;
+        $this->fieldName = (string) $fieldName;
         $this->filter = $filter;
         $this->options = $options;
     }
@@ -131,7 +127,8 @@ class Distinct implements Executable, Explainable
      * Execute the operation.
      *
      * @see Executable::execute()
-     * @return array
+     * @param Server $server
+     * @return mixed[]
      * @throws UnexpectedValueException if the command response was malformed
      * @throws UnsupportedException if read concern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
@@ -151,7 +148,7 @@ class Distinct implements Executable, Explainable
 
         $result = current($cursor->toArray());
 
-        if (! is_object($result) || ! isset($result->values) || ! is_array($result->values)) {
+        if (! isset($result->values) || ! is_array($result->values)) {
             throw new UnexpectedValueException('distinct command did not return a "values" array');
         }
 
@@ -162,6 +159,7 @@ class Distinct implements Executable, Explainable
      * Returns the command document for this operation.
      *
      * @see Explainable::getCommandDocument()
+     * @param Server $server
      * @return array
      */
     public function getCommandDocument(Server $server)
@@ -171,8 +169,10 @@ class Distinct implements Executable, Explainable
 
     /**
      * Create the distinct command document.
+     *
+     * @return array
      */
-    private function createCommandDocument(): array
+    private function createCommandDocument()
     {
         $cmd = [
             'distinct' => $this->collectionName,
@@ -187,10 +187,8 @@ class Distinct implements Executable, Explainable
             $cmd['collation'] = (object) $this->options['collation'];
         }
 
-        foreach (['comment', 'maxTimeMS'] as $option) {
-            if (isset($this->options[$option])) {
-                $cmd[$option] = $this->options[$option];
-            }
+        if (isset($this->options['maxTimeMS'])) {
+            $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
         }
 
         return $cmd;
@@ -199,9 +197,10 @@ class Distinct implements Executable, Explainable
     /**
      * Create options for executing the command.
      *
-     * @see https://php.net/manual/en/mongodb-driver-server.executereadcommand.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executereadcommand.php
+     * @return array
      */
-    private function createOptions(): array
+    private function createOptions()
     {
         $options = [];
 

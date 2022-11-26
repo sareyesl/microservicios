@@ -3,7 +3,6 @@
 namespace MongoDB\Tests\Operation;
 
 use MongoDB\Driver\BulkWrite;
-use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\UnsupportedException;
@@ -89,25 +88,6 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
         $this->expectException(UnsupportedException::class);
         $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testFindAndModifyReportedWriteConcernError(): void
-    {
-        if (($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets()) || ! $this->isReplicaSet()) {
-            $this->markTestSkipped('Test only applies to replica sets');
-        }
-
-        $this->expectException(CommandException::class);
-        $this->expectExceptionCode(100 /* UnsatisfiableWriteConcern */);
-        $this->expectExceptionMessageMatches('/Write Concern error:/');
-
-        $operation = new FindAndModify(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            ['remove' => true, 'writeConcern' => new WriteConcern(50)]
-        );
 
         $operation->execute($this->getPrimaryServer());
     }
@@ -219,6 +199,8 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
      */
     private function createFixtures(int $n): void
     {
