@@ -5,7 +5,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Crear Cliente---------------------------------------------------------------------
 // Cambiar link de la base de datos --------------------
 
-$client = new MongoDB\Client('mongodb+srv://admin:123@cluster0.lvbvi.mongodb.net/?retryWrites=true&w=majority');
+$client = new MongoDB\Client('mongodb+srv://kat:1234@cluster0.sacgk.mongodb.net/?retryWrites=true&w=majority');
 
 // Traer Base de datos---------------------------------------------------------------
 /// Cambiar nombre de la base de datos ------------------------------
